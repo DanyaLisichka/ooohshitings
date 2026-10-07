@@ -1,0 +1,149 @@
+/* Курсы валют. Стили для index.php */
+
+:root {
+    --paper: #f3efe6;
+    --ink: #1f1e1a;
+    --muted: #7b766a;
+    --line: #cdc6b5;
+    --good: #d9e6cf;
+    --good-ink: #2d5a1f;
+    --warn: #a3432a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.45 "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+a { color: inherit; }
+
+.page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 20px 60px 12vw;
+}
+
+/* шапка */
+.top { margin-bottom: 28px; }
+
+h1 {
+    margin: 0;
+    font: normal 38px/1.1 Georgia, "Times New Roman", serif;
+    letter-spacing: -0.5px;
+}
+
+.sub {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* переключатель валют */
+.cur {
+    display: flex;
+    gap: 22px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--ink);
+}
+
+.cur a {
+    padding: 0 0 8px;
+    margin-bottom: -1px;
+    text-decoration: none;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 1px;
+    border-bottom: 3px solid transparent;
+}
+
+.cur a:hover { color: var(--ink); }
+
+.cur a.on {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+}
+
+/* таблица */
+.wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 11px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+}
+
+th {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+}
+
+th a { text-decoration: none; }
+th a:hover { color: var(--ink); }
+
+.num {
+    text-align: right;
+    font-family: Consolas, "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+th.num { font-family: inherit; }
+
+.bank {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.bank:hover { text-decoration: underline; }
+
+.time { color: var(--muted); font-size: 14px; }
+
+/* лучший курс */
+td.best {
+    background: var(--good);
+    color: var(--good-ink);
+    font-weight: 700;
+}
+
+/* устаревшие данные */
+tr.old td { color: var(--muted); }
+tr.old .bank { color: var(--muted); }
+
+.flag {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--warn);
+}
+
+.note {
+    max-width: 520px;
+    margin: 18px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.msg {
+    padding: 14px 0;
+    color: var(--warn);
+}
+
+/* телефоны */
+@media (max-width: 600px) {
+    .page { padding: 24px 14px 40px; }
+    h1 { font-size: 30px; }
+    th, td { padding: 10px 6px; }
+    .flag { display: block; margin: 2px 0 0; }
+}
