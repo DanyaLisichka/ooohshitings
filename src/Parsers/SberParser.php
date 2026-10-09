@@ -1,120 +1,172 @@
 <?php
- 
+
+declare(strict_types=1);
+
+namespace App\Parser;
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
- 
+use RuntimeException;
+
 class SberParser implements ParserInterface
 {
-    private const API_URL = 'https://www.sberbank.ru/proxy/services/rates/public/v2/graph';
- 
-    // ERNP-1 - наличные курсы, как на графике "Динамика курсов наличной валюты".
-    private const RATE_TYPE = 'ERNP-1';
- 
-    // Валюты из справочника currencies.
-    private const CURRENCIES = ['USD', 'EUR', 'CNY'];
- 
-    // Глубина выборки в днях. Хватает, чтобы поймать последнее изменение курса.
-    private const DAYS_BACK = 30;
- 
+    private const URL = 'https://www.sberbank.ru/proxy/services/rates/public/v2/actual';
+
+    /**
+     * Валюты, которые запрашиваем у Сбербанка.
+     */
+    private const CURRENCIES = [
+    'USD',
+    'EUR',
+    'CNY',
+    ];
+
+    /**
+     * Регион Сбербанка.
+     */
+    private const REGION_ID = '038';
+
+    /**
+     * Тип курса.
+     */
+    private const RATE_TYPE = 'ERNP-2';
+
     private Client $client;
-    private int $regionId;
- 
-    public function __construct(?Client $client = null, int $regionId = 38)
+
+    public function __construct()
     {
-        $this->regionId = $regionId;
-        $this->client = $client ?? new Client([
-            'timeout'         => 10,
-            'connect_timeout' => 5,
-            'headers'         => [
-                'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                                   . '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-                'Accept'          => 'application/json',
-                'Accept-Language' => 'ru-RU,ru;q=0.9',
+        $this->client = new Client([
+            'timeout' => 15,
+            'connect_timeout' => 10,
+
+            // Не выбрасываем исключение автоматически на HTTP 4xx/5xx.
+            'http_errors' => false,
+
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+
+                'Accept' => 'application/json, text/plain, */*',
+
+                'Referer' => 'https://www.sberbank.ru/ru/quotes/currencies',
+
+                'Accept-Language' => 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
             ],
         ]);
     }
- 
-    public function parse(): array
-    {
-        $result = [];
- 
-        foreach (self::CURRENCIES as $i => $code) {
-            if ($i > 0) {
-                usleep(random_int(500000, 1500000)); // пауза 0.5-1.5 сек между запросами
-            }
- 
-            $result[] = $this->fetchCurrency($code);
-        }
- 
-        return $result;
-    }
- 
-    private function fetchCurrency(string $code): array
-    {
-        $dateEnd = (int) (microtime(true) * 1000);
-        $dateBeg = $dateEnd - self::DAYS_BACK * 86400 * 1000;
- 
-        try {
-            $response = $this->client->get(self::API_URL, [
-                'query' => [
-                    'rateType' => self::RATE_TYPE,
-                    'isoCode'  => $code,
-                    'id'       => $this->regionId,
-                    'dateBeg'  => $dateBeg,
-                    'dateEnd'  => $dateEnd,
-                    'segType'  => 'TRADITIONAL',
-                ],
-            ]);
- 
-            $data = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (GuzzleException $e) {
-            throw new RuntimeException("Sber {$code}: ошибка запроса: " . $e->getMessage(), 0, $e);
-        } catch (JsonException $e) {
-            throw new RuntimeException("Sber {$code}: ответ не JSON: " . $e->getMessage(), 0, $e);
-        }
- 
-        return $this->extractLatest($data, $code);
-    }
- 
+
     /**
-     * Структура ответа:
-     * historyRates -> {метка} -> ERNP-1 -> {валюта} -> {время изменения} -> rangeList[] -> rateBuy, rateSell
-     * Берём запись с максимальным временем и диапазон суммы, который начинается с нуля.
+     * Получение актуальных курсов валют.
+     *
+     * @return array<int, array{
+     *     currency: string,
+     *     buy: float,
+     *     sell: float
+     * }>
      */
-    private function extractLatest(array $data, string $code): array
-    {
-        $latestTime = null;
-        $latestEntry = null;
- 
-        foreach ($data['historyRates'] ?? [] as $block) {
-            foreach ($block[self::RATE_TYPE][$code] ?? [] as $time => $entry) {
-                $time = (int) $time;
-                if ($latestTime === null || $time > $latestTime) {
-                    $latestTime = $time;
-                    $latestEntry = $entry;
-                }
-            }
+    public function parse(): array {
+        echo '<pre>';
+        echo 'Время запроса: ' . date('Y-m-d H:i:s') . PHP_EOL;
+        echo 'Курс получен от Сбера:' . PHP_EOL;
+        print_r($rates);
+        echo '</pre>';
+    // Формируем isoCodes[] точно в том виде,
+    // в котором их отправляет браузер Safari.
+    $isoCodes = [];
+
+    
+    foreach (self::CURRENCIES as $currency) {
+        $isoCodes[] = 'isoCodes[]=' . rawurlencode($currency);
+    }
+
+    $query = implode('&', [
+        'rateType=' . rawurlencode(self::RATE_TYPE),
+        implode('&', $isoCodes),
+        'regionId=' . rawurlencode(self::REGION_ID),
+    ]);
+
+    $url = self::URL . '?' . $query;
+
+    try {
+        $response = $this->client->get($url);
+    } catch (GuzzleException $e) {
+        throw new RuntimeException(
+            'Ошибка запроса к Сбербанку: ' . $e->getMessage(),
+            0,
+            $e
+        );
+    }
+
+    $statusCode = $response->getStatusCode();
+    $body = (string) $response->getBody();
+
+    if ($statusCode !== 200) {
+        throw new RuntimeException(
+            "Сбербанк вернул HTTP {$statusCode}. Ответ: {$body}"
+        );
+    }
+
+    if ($body === '') {
+        throw new RuntimeException(
+            'Сбербанк вернул пустой ответ'
+        );
+    }
+
+    $data = json_decode($body, true);
+
+    if (!is_array($data)) {
+        throw new RuntimeException(
+            'Ответ Сбербанка не является корректным JSON: '
+            . json_last_error_msg()
+        );
+    }
+
+    $result = [];
+
+    foreach (self::CURRENCIES as $currency) {
+
+        if (!isset($data[$currency])) {
+            continue;
         }
- 
-        if ($latestEntry === null) {
-            throw new RuntimeException("Sber {$code}: курсы не найдены в ответе");
+
+        $currencyData = $data[$currency];
+
+        if (
+            !isset($currencyData['rateList']) ||
+            !is_array($currencyData['rateList']) ||
+            empty($currencyData['rateList'])
+        ) {
+            continue;
         }
- 
-        $range = null;
-        foreach ($latestEntry['rangeList'] ?? [] as $item) {
-            if ($range === null || ($item['rangeAmountBottom'] ?? 0) < ($range['rangeAmountBottom'] ?? 0)) {
-                $range = $item;
-            }
+
+        $rate = $currencyData['rateList'][0];
+
+        if (
+            !isset($rate['rateBuy']) ||
+            !isset($rate['rateSell'])
+        ) {
+            continue;
         }
- 
-        if ($range === null || !isset($range['rateBuy'], $range['rateSell'])) {
-            throw new RuntimeException("Sber {$code}: в записи нет rateBuy или rateSell");
+
+        $buy = (float) $rate['rateBuy'];
+        $sell = (float) $rate['rateSell'];
+
+        if ($buy <= 0 || $sell <= 0) {
+            continue;
         }
- 
-        return [
-            'currency' => $code,
-            'buy'      => (float) $range['rateBuy'],
-            'sell'     => (float) $range['rateSell'],
+
+        $result[] = [
+            'currency' => $currency,
+            'buy' => $buy,
+            'sell' => $sell,
         ];
     }
+
+    if (empty($result)) {
+        throw new RuntimeException(
+            'Сбербанк не вернул ни одного корректного курса'
+        );
+    }
+
+    return $result;
+}
 }
