@@ -1,0 +1,142 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+
+/* Шапка */
+
+.header {
+    background: #ffffff;
+    padding: 35px 0;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.header h1 {
+    margin: 0 0 10px;
+    font-size: 32px;
+}
+
+.header p {
+    margin: 0;
+    color: #666;
+}
+
+
+/* Банки */
+
+.banks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    padding: 40px 0;
+}
+
+
+/* Карточка банка */
+
+.bank-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.bank-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.bank-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.bank-code {
+    background: #eeeeee;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* Таблица */
+
+.rates-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.rates-table th,
+.rates-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.rates-table th {
+    font-size: 14px;
+    color: #777;
+}
+
+.rates-table td {
+    font-size: 16px;
+}
+
+.rates-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* Время обновления */
+
+.updated {
+    margin-top: 20px;
+    color: #888;
+    font-size: 13px;
+}
+
+
+/* Подвал */
+
+.footer {
+    background: #ffffff;
+    border-top: 1px solid #ddd;
+    padding: 20px 0;
+    text-align: center;
+    color: #777;
+}
+
+
+/* Адаптив */
+
+@media (max-width: 700px) {
+
+    .banks {
+        grid-template-columns: 1fr;
+    }
+
+    .header h1 {
+        font-size: 26px;
+    }
+
+    .bank-card {
+        padding: 20px;
+    }
+}
